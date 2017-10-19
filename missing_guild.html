@@ -380,7 +380,7 @@ if (debug) console.log('debug #userApiDetailsForm (Fetch Data)');
     userId   = $('#userId').val();
     apiToken = $('#apiToken').val();
 	hippoOnly = $('#hippoOnly')[0].checked;
-	messageToSend = $('#apiToken').val();
+	messageToSend = $('#messageToSend').val();
 	fetchDataOnly = $('#fetchDataOnly')[0].checked;
 //	exportOption = $('#exportOption').val()
 //    exportFormat = $('#exportFormat').val()
@@ -696,7 +696,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		}
 		
 		if (privateMessage != null){
-			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to ' + loopList.length + ' users?')){
+			if (confirm('Are you sure you wish to send (sample) message\n\n' + privateMessage + '\n\n to ' + loopList.length + ' users?')){
 				actionNotificationList = ''
 				postNextMessageUser()
 			} else {
@@ -2361,7 +2361,7 @@ ul#tableOfContents > li {
 
 		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
-		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica.</p>
+		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica expect BULK PM a large amount of people..</p>
 
 		<h2>Thank You!</h2>
 		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
