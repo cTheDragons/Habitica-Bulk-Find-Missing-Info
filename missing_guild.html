@@ -405,9 +405,9 @@ if (debug) console.log('debug #userApiDetailsForm (testMessage)');
 	memberData = {}
 	var newData = {leaderid: userId, content: []}
 	memberData[userId] = newData
-	newData = {name: 'Test Guild 1', id: '111111-1111-1111'}
+	newData = {name: 'Test Guild 1', _id: '00000000-0000-4000-A000-000000000000'}
 	memberData[userId].content.push(newData)
-	newData = {name: 'Another Test Guild 2', id: '2222-2222-222222'}
+	newData = {name: 'Another Test Guild 2', _id: '5481ccf3-5d2d-48a9-a871-70a7380cee5a'}
 	memberData[userId].content.push(newData)
 	var rowData = [[userId]]
 	postMessageUser(rowData,0,0)
@@ -774,7 +774,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	function postFormatMessageUser(dataSent) {
 		var listToSend = ''
 		$.each(memberData[dataSent[uuidIndex]].content, function(index, obj) {
-			listToSend += '\n+ ' + obj.name
+			listToSend += '\n+ [' + obj.name + '](https://habitica.com/groups/guild/' +  obj._id + ')'
 		});	
 		
 		privateMessage = messageToSend.replace(/{list}/g,listToSend);
@@ -2225,7 +2225,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> All Public Guilds with Missing Search Data!
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.0)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.1)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -2258,6 +2258,19 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.1 - Adding Guild Links <span class="date">2017-10-28</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>AAdding guild links into message.</li>
+                 </ul>
+            </li>
+            <li>Documentation:
+                <ul>
+                    <li>Putting in short cuts into system.</li>
+                 </ul>
+            </li>
+        </ul></dd>
 		<dt>1.0 - Shiny Release! <span class="date">2017-10-13</span></dt>
         <dd><ul>
             <li>Features:
@@ -2312,6 +2325,7 @@ ul#tableOfContents > li {
 			<label for="messageToSend"><span>Message to Send?</span>
                 <input type="text" name="messageToSend" id="messageToSend" value="Hi there! As a representative of the [Guild Leaders & Challenge Creators](https://habitica.com/groups/guild/0393624e-65f0-40c1-8e87-360955fcebca), I wanted to reach out because I noticed that you haven't added any summaries or [categories](http://habitica.wikia.com/wiki/Guild_and_Challenge_Categories) to one of your following guilds:{nl} {list} {nl}{nl}Since Habitica's new redesign, Guild Leaders can add [categories](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) to their Guild so that it's easier for new users to find it and join it. The Guild summaries now show on the Guild page instead of the description, and serve as a succinct pitch for why users might want to join the Guild. You might want to add these new features to your Guild so that it can attract more people. For more information on maintaining your guild please check out the [Guild Maintenance Tips on the Wiki](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) Have a great day!"/>
             </label>
+			<p class="lowlight">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{nl}  : New Line &nbsp;&nbsp;&nbsp;&nbsp;{list}  : List of Guilds</p>			
 			<div id="messageToSendPreview"></div>
 			<input class="div-testMessage" type="submit" value="Test Message" />
 			<label for="fetchDataOnly"><span>Fetch Data Only?</span>
