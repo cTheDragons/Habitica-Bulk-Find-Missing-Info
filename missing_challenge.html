@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>All Public Guilds with Missing Search Data!</title>
+    <title>Guild Challenges with Missing Search Data!</title>
     <base target="_blank">
 
 <!--
@@ -29,7 +29,7 @@ Contributors:
 -->
 
 
-    <meta name="description" content="All Public Guilds with Missing Search Data!" />
+    <meta name="description" content="Guild Challenges with Missing Search Data!" />
     <meta name="author" content="cTheDragons" />
 
 	
@@ -54,11 +54,13 @@ $(function() { // wraps around all our code to not pollute global namespace
 var content;  	// holds site-wide content (gear names and stats, quests, etc)
 var user;    	 // holds user's data
 var guilds;	// holds all guilds data
+var challengeGroup; //holds challenge data for group
 var userIsAdmin; //holds if the user is an Admin or not
 var memberList; //holds list of members
 var memberData; //holds data of the members
 var memberListToFetch = []; //holds hippo data
 var memberListToFetch_idOnly = []; //holds memberList that is fetchng (30 limit)
+var noOwner=[]; //No owner to challenges
 var missingData;
 var lastListMemberId = '';  // hold last member id to be used with groups
 var hippoList; //holds hippo list
@@ -87,23 +89,27 @@ var TABLEDISPLAYSUFFIX = '_display'
 
 //index array for looping
 var dashboardToDisplay = [
-	{id: 'members', label: 'Total Leaders', hoverText: 'Total number of Guilds Leader with missing data', value: 'memberList.length', status: 'safe', showOnly: []},
-	{id: 'missingData', label: 'Total Guilds', hoverText: 'Total number Guilds with missing content', value: 'sectionTables["missingData"].dataSet.length', status: 'safe', showOnly: []}
+	{id: 'members', label: 'Total Leaders', hoverText: 'Total number of Challenges Leader with missing data', value: 'memberList.length', status: 'safe', showOnly: []},
+	{id: 'missingData', label: 'Total Challenges', hoverText: 'Total number Challenges with missing content', value: 'sectionTables["missingData"].dataSet.length', status: 'safe', showOnly: []},
+	{id: 'noOwner', label: 'No Owners', hoverText: 'Total number Challenges with missing owners', value: 'noOwner.length', status: 'safe', showOnly: []}
+
 ]
 
 
 var sectionsToDisplay = [	
 	{type: 'heading', id: 'headingGroup01', title: '', showOnly: [], description: ''},
-		{type: 'sectionTable', id: 'members', title: 'Leader of Guilds with Missing Data', showOnly: [], description: 'A table listing all the guild owners with missing data.'},
+		{type: 'sectionTable', id: 'members', title: 'Leader of Challenges with Missing Data', showOnly: [], description: 'A table listing all the challenge owners with missing data.'},
 	{type: 'heading', id: 'headingGroup02', title: '', showOnly: [], description: ''},
-		{type: 'sectionTable', id: 'missingData', title: 'List of Guilds with Missing Data', showOnly: [], description: 'A table listing guilds with missing data.'},
+		{type: 'sectionTable', id: 'missingData', title: 'List of Challenges with Missing Data', showOnly: [], description: 'A table listing challenges with missing data.'},
+	{type: 'heading', id: 'headingGroup03', title: '', showOnly: [], description: ''},
+		{type: 'sectionTable', id: 'noOwner', title: 'List of Challenges with No Owners', showOnly: [], description: 'A table listing challenges with missing owners.'}
 ]
 
 var sectionTables =	{}
 sectionTables['members'] = {
 	type: 'memberData',
 	dataSet: [],  
-	dataSetHeader: ['id', 'Total Guilds', 'Missing Categories', 'Missing Summary',  'Guild List', 'Id List'],
+	dataSetHeader: ['id', 'Total Challenges', 'Missing Categories', 'Missing Summary',  'Challenge List', 'Id List'],
 	dataTable: ['leaderid', 'stats.totalMissingData', 'stats.totalMissingCategories', 'stats.totalMissingSummary', 'nameOfMissing', 'idOfMissing'],
 	babyBear: {show: [0,1,4], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [0,1,2,3,4], orderBy: [[1, 'asc']]},
@@ -118,12 +124,27 @@ sectionTables['members'] = {
 sectionTables['missingData'] = {
 	type: 'missingData',
 	dataSet: [],  
-	dataSetHeader: ['Guild Id', 'Guild Name', 'Description', 'Member Count',  'Missing Summary', 'Missing Categories', 'Leader Id'],
-	dataTable: ['_id', 'nameLink', 'descriptionPretty', 'memberCount', 'stats.missingSummary', 'stats.missingCategories', 'leader'],
+	dataSetHeader: ['Challenge Id', 'Challenge Name', 'Description', 'Member Count',  'Missing Summary', 'Missing Categories', 'Leader Id'],
+	dataTable: ['_id', 'nameLink', 'descriptionPretty', 'memberCount', 'stats.missingSummary', 'stats.missingCategories', 'leader.id'],
 	babyBear: {show: [1,3,4,5], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [1,2,3,4,5], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-center', 'targets': [4,5]}, {'className': 'dt-right', 'targets': [3]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+
+sectionTables['noOwner'] = {
+	type: 'noOwner',
+	dataSet: [],  
+	dataSetHeader: ['Challenge Id', 'Challenge Name', 'Description', 'Member Count'],
+	dataTable: ['_id', 'nameLink', 'descriptionPretty', 'memberCount'],
+	babyBear: {show: [1,3], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [1,2,3], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-center', 'targets': [3]}, {'className': 'dt-right', 'targets': []}],
 	subTitle: function (){
 		var html = ''
 		return html 
@@ -194,23 +215,24 @@ var serverPathUser				= '/user';
 
 var serverPathGroup				= '/groups' //Guild associated with Challenge
 var serverPathParty				= '/groups/party'
+var serverPathChallengeGroup	= '/challenges/groups'
 var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //challenge members
 var serverPathMemberProfilePart	= '/members' //will be /members/:uid //
 var serverPathInbox				= '/user/messages'	
 var serverMessageUser			= '/members/send-private-message'
 var serverGiftGem				= '/members/transfer-gems'
-var serverAwardChallenge		= 'selectWinner'  //will be /challenges/:challengeId/selectWinner 
 
 var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/' 
 var imageShopPrefix             =  'shop_'
 var imageFileSuffix				= '.png'
 var imageGem					= 'Pet_Currency_Gem1x.png'
-var contentURL					= 'https://habitica.com/groups/guild/'
+var contentURL					= 'https://habitica.com/challenges/'
 
 var userId						= '';
 var apiToken					= '';
 var hippoOnly 					= ''; //holds group id from 
-var groupId						= '0b306146-e281-4f85-8a58-b05cddcaf219' //groupId
+var groupId						= '' //groupId
+var hippoGroupId				= '0b306146-e281-4f85-8a58-b05cddcaf219' //groupId
 var exportOption 			 	= 'mamaBear'; 
 var exportFormat			 	= 1;
 var debug						= false;
@@ -379,6 +401,7 @@ if (debug) console.log('debug #userApiDetailsForm (Fetch Data)');
 	/* The user manually submitted the API connection form. */
     userId   = $('#userId').val();
     apiToken = $('#apiToken').val();
+	groupId = $('#groupId').val();
 	hippoOnly = $('#hippoOnly')[0].checked;
 	messageToSend = $('#messageToSend').val();
 	fetchDataOnly = $('#fetchDataOnly')[0].checked;
@@ -401,13 +424,13 @@ if (debug) console.log('debug #userApiDetailsForm (testMessage)');
     apiToken = $('#apiToken').val();
 	messageToSend = $('#messageToSend').val();
 
-	//Prime data for test run with two made up guilds.
+	//Prime data for test run with two made up challenges.
 	memberData = {}
 	var newData = {leaderid: userId, content: []}
 	memberData[userId] = newData
-	newData = {name: 'Test Guild 1', _id: '00000000-0000-4000-A000-000000000000'}
+	newData = {name: 'Test Challenge 1', _id: 'ca428fe2-1e3d-4974-bbb2-21edd4f8bec1'}
 	memberData[userId].content.push(newData)
-	newData = {name: 'Another Test Guild 2', _id: '5481ccf3-5d2d-48a9-a871-70a7380cee5a'}
+	newData = {name: 'Another Test Cballenge 2', _id: '2b840b66-4d61-4b84-bb44-29f8829e251c'}
 	memberData[userId].content.push(newData)
 	var rowData = [[userId]]
 	postMessageUser(rowData,0,0)
@@ -424,7 +447,7 @@ function fetchData() {
     $('#loading .bad' ).hide();
 	
 	// clear from previous fetches
-	guildUserList = []; 
+	challengeGroup = []; 
 	memberListToFetch = [];  
 	memberList = [];
 	memberData = {};
@@ -435,7 +458,6 @@ function fetchData() {
 	var ajaxRunningCount_Group = 1;
 	if (hippoOnly == false) ajaxRunningCount_Group = 0;
 	
-    // fetch the user's own content (guilds, parties):
 	$('#loading #statusFetch').text('Asking for User Data');
     $.ajax({
         url: serverUrl + serverPathUser,
@@ -462,19 +484,17 @@ function fetchData() {
     });
 	
     // fetch the site-wide content (gear names and stats, etc):
-	$('#loading #statusFetch').text('Asking for Public Guild List');
-	var newData = { "type": "publicGuilds" }
-    $.ajax({
-		url: serverUrl + serverPathGroup,
+	$('#loading #statusFetch').text('Asking for Challenge Data for Group');
+	$.ajax({
+		url: serverUrl + serverPathChallengeGroup + '/' + groupId,
 		type: 'GET',
-		contentType: 'application/json',
-		data: newData,
+		dataType: 'json',
 		cache: false,
 		beforeSend: function(xhr){
 				xhr.setRequestHeader('x-api-user', userId);
 				xhr.setRequestHeader('x-api-key',  apiToken);
-		},
-		success: fetchGuildListSuccess,
+			},
+		success: fetchChallengeGroupSuccess,
 		error: fetchFailure  //$$$ Fetch all guild data instead?
     });
 	
@@ -523,12 +543,11 @@ function fetchData() {
     }
   
   
-	function fetchGuildListSuccess(data) {
-		if (debug) console.log('debug Groups data start');
-		guilds = data.data;
-		if (debugShowObject) console.log(guilds);
-		
-		//if (debugShowObject) console.log(groups);
+	function fetchChallengeGroupSuccess(data) {
+		if (debug) console.log('debug Challenge Group data start');
+		$('#loading #statusFetch').text('Fetching Challenge Data for the Group');
+		challengeGroup = data.data;
+		if (debugShowObject) console.log(challengeGroup);
 		ajaxRunningCount--;
 		fetchDataComplete()
 	}		
@@ -553,9 +572,9 @@ function fetchData() {
 		var completeUrl = '';
 
 		if (lastListMemberId == '') {
-			completeUrl = serverUrl + serverPathGroup + '/' + groupId + serverPathGroupMemberPart ;
+			completeUrl = serverUrl + serverPathGroup + '/' + hippoGroupId + serverPathGroupMemberPart ;
 		} else {
-			completeUrl = serverUrl + serverPathGroup + '/' + groupId + serverPathGroupMemberPart + '?lastId=' + lastListMemberId;
+			completeUrl = serverUrl + serverPathGroup + '/' + hippoGroupId + serverPathGroupMemberPart + '?lastId=' + lastListMemberId;
 		}
 		
 
@@ -584,7 +603,7 @@ function fetchData() {
 			//The extra test as sometimes the Member Count is not accurate
 			/*
 				if (group.memberCount < memberListToFetch.length || memberListToFetch[memberListToFetch.length -1]._id == lastListMemberId ) {
-					$('#loading #groupDetail').text(group.name + ' (Group Id: ' + groupId + ')');
+					$('#loading #groupDetail').text(group.name + ' (Group Id: ' + hippoGroupId + ')');
 					$('#loading #groupDetailCount').text(' (Stated: ' + group.memberCount + ' Estimated: ' + memberListToFetch.length + ')');
 					$('#loading .error' ).show();
 				}
@@ -612,25 +631,31 @@ function determineList() {
 	
 	//Do a quick loop so we can check if leader is needed $$$I'm sure there is a better way but it is late
 	memberListToFetch_idOnly = []
+	noOwner = []
 	$.each(memberListToFetch, function(index, obj){
 		memberListToFetch_idOnly.push(obj.id)
 	});
 		
-	$.each(guilds, function(index, obj){
+	$.each(challengeGroup, function(index, obj){
 		$('#loading #statusFetch').text('Determining List to send... (This might take a while)') ;
-		if ((obj.categories == undefined) || (obj.categories.length == 0) || (obj.summary == undefined)){
-			if (hippoOnly == false || (memberListToFetch_idOnly.indexOf(obj.leader) >= 0) ) {
-				if (memberList.indexOf(obj.leader) < 0) {
-					memberList.push(obj.leader)
-					var newData = {leaderid: obj.leader, content: []}
-					memberData[obj.leader] = newData
-				} 
-				memberData[obj.leader].content.push(obj)
-			}	
+		if (obj.leader != undefined) {
+			if ((obj.categories == undefined) || (obj.categories.length == 0) || (obj.summary == undefined) || (obj.summary == obj.name)){
+				if (hippoOnly == false || (memberListToFetch_idOnly.indexOf(obj.leader.id) >= 0) ) {
+					if (memberList.indexOf(obj.leader.id) < 0) {
+						memberList.push(obj.leader.id)
+						var newData = {leaderid: obj.leader.id, content: []}
+						memberData[obj.leader.id] = newData
+					} 
+					memberData[obj.leader.id].content.push(obj)
+				}	
+			}
+		} else {
+			noOwner.push(obj)
 		}
 	});
 	if (debugShowObject) console.log(memberList);
 	if (debugShowObject) console.log(memberData);
+	if (debugShowObject) console.log(noOwner);
 	
 	if (fetchDataOnly){
 		parseData()
@@ -733,7 +758,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 				},
 			success: postMessageUserSuccess,
 			error: postMessageUserFailure
-		});		
+		});			
 	}
 		
 
@@ -774,7 +799,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	function postFormatMessageUser(dataSent) {
 		var listToSend = ''
 		$.each(memberData[dataSent[uuidIndex]].content, function(index, obj) {
-			listToSend += '\n+ [' + obj.name + '](https://habitica.com/groups/guild/' +  obj._id + ')'
+			listToSend += '\n+ [' + obj.name + '](https://habitica.com/challenges/' +  obj._id + ')'
 		});	
 		
 		privateMessage = messageToSend.replace(/{list}/g,listToSend);
@@ -797,7 +822,7 @@ function parseData() {
 	var fetchtime = myDateConverter(new Date(), 'pretty');
 	
 	
-    collateAndDisplayData(); //This is one function as memberActivty requires both Member and Guild data.
+    collateAndDisplayData(); 
 
 	userDataInHeader();
 
@@ -1505,7 +1530,7 @@ function parseData() {
 					missingData[obj2._id].stats.missingSummary = false
 					missingData[obj2._id].stats.missingCategories = false
 					
-					if (missingData[obj2._id].summary == undefined) {						
+					if ((missingData[obj2._id].summary == undefined) || (missingData[obj2._id].summary == missingData[obj2._id].name)) {						
 						missingData[obj2._id].stats.missingSummary = true
 						obj.stats.totalMissingSummary++
 					}
@@ -1640,7 +1665,31 @@ function parseData() {
 				});
 			});			
 
+			///////////////////////////////////////////////////////////////
+			////   Missing Content                             ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(noOwner, function(index, obj){
+				obj.nameNotPretty = obj.name //render later without html tags?
+				obj.namePretty = renderFormattedText(obj.name)
+				obj.nameLink = '<a href="' + contentURL  + obj._id +'">' + renderFormattedText(obj.name) + '</a>'
+				obj.descriptionNotPretty = obj.description //render later without html tags?
+				obj.descriptionPretty = renderFormattedText(obj.description)
 
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
+						if (sectionTables[obj2.id].type == 'noOwner'){
+							addToArray = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								addToArray.push(eval('obj.' + obj3))
+							});
+							//Don't include system messages if chatNotSystemExport
+							if ((obj2.id != 'guildsLeader') || (userId == obj.leader)) sectionTables[obj2.id].dataSet.push(addToArray); 
+						}
+						
+					}
+				});
+			});	
+			
 			///////////////////////////////////////////////////////////////
 			////   MemberData                                  ////////////
 			//////////////////////////////////////////////////////////////
@@ -1652,8 +1701,8 @@ function parseData() {
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
 							});
-							//Don't include system messages if chatNotSystemExport
-							if ((obj2.id != 'guildsLeader') || (userId == obj.leader)) sectionTables[obj2.id].dataSet.push(addToArray); 
+							
+							sectionTables[obj2.id].dataSet.push(addToArray); 
 						}
 						
 					}
@@ -2224,8 +2273,8 @@ ul#tableOfContents > li {
 </style>
 </head>
 <body><div id="innerBody">	
-<h1><a href="https://habitica.com/">Habitica</a> All Public Guilds with Missing Search Data!
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.1)</span></h1><!-- VERSION TOGGLE -->
+<h1><a href="https://habitica.com/">Habitica</a> Guild Challenges with Missing Search Data!
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.0)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -2258,25 +2307,13 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
-		<dt>1.1 - Adding Guild Links <span class="date">2017-10-28</span></dt>
-        <dd><ul>
-            <li>Features:
-                <ul>
-					<li>AAdding guild links into message.</li>
-                 </ul>
-            </li>
-            <li>Documentation:
-                <ul>
-                    <li>Putting in short cuts into system.</li>
-                 </ul>
-            </li>
-        </ul></dd>
 		<dt>1.0 - Shiny Release! <span class="date">2017-10-13</span></dt>
         <dd><ul>
             <li>Features:
                 <ul>
-					<li class="subheading">Leader of Guilds with Missing Data</li>
-					<li class="subheading">List of Guilds with Missing Data</li>
+					<li class="subheading">Leader of Challenges with Missing Data</li>
+					<li class="subheading">List of Challenges with Missing Data</li>
+					<li class="subheading">List of Challenges with No Owner</li>
 					<li>Option to send Test Message to yourself</li>
 					<li>Option to only fetch data.</li>
                  </ul>
@@ -2319,11 +2356,14 @@ ul#tableOfContents > li {
             <label for="apiToken"><span>API Token</span>
                 <input type="password" name="apiToken" id="apiToken"/>
             </label>
+            <label for="groupId"><span>Guild Id</span>
+                <input type="text" name="groupId" id="groupId" value="00000000-0000-4000-A000-000000000000"/>
+            </label>
 			<label for="hippoOnly"><span>Hippos Only?</span>
                 <input type="checkbox" name="hippoOnly" id="hippoOnly" checked/>
             </label>			
 			<label for="messageToSend"><span>Message to Send?</span>
-                <input type="text" name="messageToSend" id="messageToSend" value="Hi there! As a representative of the [Guild Leaders & Challenge Creators](https://habitica.com/groups/guild/0393624e-65f0-40c1-8e87-360955fcebca), I wanted to reach out because I noticed that you haven't added any summaries or [categories](http://habitica.wikia.com/wiki/Guild_and_Challenge_Categories) to one of your following guilds:{nl} {list} {nl}{nl}Since Habitica's new redesign, Guild Leaders can add [categories](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) to their Guild so that it's easier for new users to find it and join it. The Guild summaries now show on the Guild page instead of the description, and serve as a succinct pitch for why users might want to join the Guild. You might want to add these new features to your Guild so that it can attract more people. For more information on maintaining your guild please check out the [Guild Maintenance Tips on the Wiki](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) Have a great day!"/>
+                <input type="text" name="messageToSend" id="messageToSend" value="Hi there! As a representative of the [Guild Leaders & Challenge Creators](https://habitica.com/groups/guild/0393624e-65f0-40c1-8e87-360955fcebca), I wanted to reach out because I noticed that you haven't added any summaries or [categories](http://habitica.wikia.com/wiki/Guild_and_Challenge_Categories) to one of your following challenges:{nl} {list} {nl}{nl}Since Habitica's new redesign, challenge Owners can add [categories](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) to their challenges so that it's easier for new users to find it and join it. The challenge summaries now show on the challenge page instead of the description, and serve as a succinct pitch for why users might want to join the challenge. You might want to add these new features to your challenge so that it can attract more people. For more information on maintaining your challenge please check out the [Guild Maintenance Tips on the Wiki](http://habitica.wikia.com/wiki/Guild_Creation_and_Maintenance_Tips) Have a great day!"/>
             </label>
 			<p class="lowlight">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{nl}  : New Line &nbsp;&nbsp;&nbsp;&nbsp;{list}  : List of Guilds</p>			
 			<div id="messageToSendPreview"></div>
