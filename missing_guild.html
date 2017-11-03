@@ -618,7 +618,7 @@ function determineList() {
 		
 	$.each(guilds, function(index, obj){
 		$('#loading #statusFetch').text('Determining List to send... (This might take a while)') ;
-		if ((obj.categories == undefined) || (obj.categories.length == 0) || (obj.summary == undefined)){
+		if ((obj.categories == undefined) || (obj.categories.length == 0) || (obj.summary == undefined) || (obj.summary == obj.name)){
 			if (hippoOnly == false || (memberListToFetch_idOnly.indexOf(obj.leader) >= 0) ) {
 				if (memberList.indexOf(obj.leader) < 0) {
 					memberList.push(obj.leader)
@@ -1505,7 +1505,7 @@ function parseData() {
 					missingData[obj2._id].stats.missingSummary = false
 					missingData[obj2._id].stats.missingCategories = false
 					
-					if (missingData[obj2._id].summary == undefined) {						
+					if ((missingData[obj2._id].summary == undefined) || (missingData[obj2._id].summary == missingData[obj2._id].name)) {						
 						missingData[obj2._id].stats.missingSummary = true
 						obj.stats.totalMissingSummary++
 					}
@@ -2225,7 +2225,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> All Public Guilds with Missing Search Data!
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.1)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.2)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -2258,11 +2258,19 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.2 - Checking Summary does not match Guild Name <span class="date">2017-11-04</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Matching Summary not matching guild name (Due to Data Update).</li>
+                 </ul>
+            </li>
+        </ul></dd>
 		<dt>1.1 - Adding Guild Links <span class="date">2017-10-28</span></dt>
         <dd><ul>
             <li>Features:
                 <ul>
-					<li>AAdding guild links into message.</li>
+					<li>Adding guild links into message.</li>
                  </ul>
             </li>
             <li>Documentation:
